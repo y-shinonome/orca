@@ -1,9 +1,8 @@
-
 body {
-  font-family: Georgia, "Times New Roman",Times, serif;
+  font-family: Georgia, "Times New Roman", Times, serif;
   font-size: 16px;
   color: #333333;
-  background-color: #F9F9F9;
+  background-color: #f9f9f9;
 }
 
 p {
@@ -27,29 +26,29 @@ h2 {
   font-size: 200%;
   font-weight: bold;
   color: #000000;
-  border-bottom: 1px solid #C6EC8C;
+  border-bottom: 1px solid #c6ec8c;
 }
 
 a:link {
-  color: #00CC00;
+  color: #00cc00;
   text-decoration: underline;
   font-weight: bold;
 }
 
 li a:link {
-  color: #00CC00;
+  color: #00cc00;
   text-decoration: none;
   font-weight: bold;
 }
 
 a:visited {
-  color: #00CC00;
+  color: #00cc00;
   text-decoration: underline;
   font-weight: bold;
 }
 
 li a:visited {
-  color: #00CC00;
+  color: #00cc00;
   text-decoration: none;
   font-weight: bold;
 }
@@ -68,7 +67,7 @@ li a:hover {
   font-weight: bold;
   border-bottom-width: 1px;
   border-bottom-style: solid;
-  border-bottom-color: #C6EC8C;
+  border-bottom-color: #c6ec8c;
 }
 
 a:active {
@@ -103,7 +102,7 @@ a:active {
   width: 25px;
   height: 25px;
   border-radius: 50%;
-  background: #4CAF50;
+  background: #4caf50;
   cursor: pointer;
 }
 
@@ -111,6 +110,6 @@ a:active {
   width: 25px;
   height: 25px;
   border-radius: 50%;
-  background: #4CAF50;
+  background: #4caf50;
   cursor: pointer;
 }

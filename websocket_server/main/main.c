@@ -240,19 +240,19 @@ static void http_serve(struct netconn *conn) {
   static err_t err;
 
   // default page
-  extern const uint8_t root_html_start[] asm("_binary_root_html_start");
-  extern const uint8_t root_html_end[] asm("_binary_root_html_end");
-  const uint32_t root_html_len = root_html_end - root_html_start;
+  extern const uint8_t index_html_start[] asm("_binary_index_html_start");
+  extern const uint8_t index_html_end[] asm("_binary_index_html_end");
+  const uint32_t index_html_len = index_html_end - index_html_start;
 
-  // test.js
-  extern const uint8_t test_js_start[] asm("_binary_test_js_start");
-  extern const uint8_t test_js_end[] asm("_binary_test_js_end");
-  const uint32_t test_js_len = test_js_end - test_js_start;
+  // main.js
+  extern const uint8_t main_js_start[] asm("_binary_main_js_start");
+  extern const uint8_t main_js_end[] asm("_binary_main_js_end");
+  const uint32_t main_js_len = main_js_end - main_js_start;
 
-  // test.css
-  extern const uint8_t test_css_start[] asm("_binary_test_css_start");
-  extern const uint8_t test_css_end[] asm("_binary_test_css_end");
-  const uint32_t test_css_len = test_css_end - test_css_start;
+  // index.css
+  extern const uint8_t index_css_start[] asm("_binary_index_css_start");
+  extern const uint8_t index_css_end[] asm("_binary_index_css_end");
+  const uint32_t index_css_len = index_css_end - index_css_start;
 
   // favicon.ico
   extern const uint8_t favicon_ico_start[] asm("_binary_favicon_ico_start");
@@ -277,7 +277,7 @@ static void http_serve(struct netconn *conn) {
           && !strstr(buf,"Upgrade: websocket")) {
         ESP_LOGI(TAG,"Sending /");
         netconn_write(conn, HTML_HEADER, sizeof(HTML_HEADER)-1,NETCONN_NOCOPY);
-        netconn_write(conn, root_html_start,root_html_len,NETCONN_NOCOPY);
+        netconn_write(conn, index_html_start,index_html_len,NETCONN_NOCOPY);
         netconn_close(conn);
         netconn_delete(conn);
         netbuf_delete(inbuf);
@@ -291,19 +291,19 @@ static void http_serve(struct netconn *conn) {
         netbuf_delete(inbuf);
       }
 
-      else if(strstr(buf,"GET /test.js ")) {
-        ESP_LOGI(TAG,"Sending /test.js");
+      else if(strstr(buf,"GET /main.js ")) {
+        ESP_LOGI(TAG,"Sending /main.js");
         netconn_write(conn, JS_HEADER, sizeof(JS_HEADER)-1,NETCONN_NOCOPY);
-        netconn_write(conn, test_js_start, test_js_len,NETCONN_NOCOPY);
+        netconn_write(conn, main_js_start, main_js_len,NETCONN_NOCOPY);
         netconn_close(conn);
         netconn_delete(conn);
         netbuf_delete(inbuf);
       }
 
-      else if(strstr(buf,"GET /test.css ")) {
-        ESP_LOGI(TAG,"Sending /test.css");
+      else if(strstr(buf,"GET /index.css ")) {
+        ESP_LOGI(TAG,"Sending /index.css");
         netconn_write(conn, CSS_HEADER, sizeof(CSS_HEADER)-1,NETCONN_NOCOPY);
-        netconn_write(conn, test_css_start, test_css_len,NETCONN_NOCOPY);
+        netconn_write(conn, index_css_start, index_css_len,NETCONN_NOCOPY);
         netconn_close(conn);
         netconn_delete(conn);
         netbuf_delete(inbuf);
