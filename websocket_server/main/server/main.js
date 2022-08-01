@@ -3,9 +3,9 @@ document.getElementById("state").innerHTML = "WebSocket is not connected";
 let websocket = new WebSocket("ws://" + location.hostname + "/");
 let slider = document.getElementById("myRange");
 
-slider.oninput = function () {
-  websocket.send("L" + slider.value);
-};
+// slider.oninput = function () {
+//   websocket.send("L" + slider.value);
+// };
 
 // function sendMsg() {
 //   websocket.send("L50");
