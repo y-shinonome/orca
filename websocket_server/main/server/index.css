@@ -26,6 +26,16 @@ h1 {
   margin: 0;
 }
 
+/* Utility Classes */
+.p-3 {
+  padding: 12px 0;
+}
+
+.p-5 {
+  padding: 20px 0;
+}
+/* Utility Classes */
+
 .page-container {
   min-height: 100vh;
   position: relative;
