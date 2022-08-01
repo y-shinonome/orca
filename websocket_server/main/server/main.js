@@ -1,7 +1,7 @@
 document.getElementById("state").innerHTML = "WebSocket is not connected";
 
 let websocket = new WebSocket("ws://" + location.hostname + "/");
-let slider = document.getElementById("myRange");
+// let slider = document.getElementById("myRange");
 
 // slider.oninput = function () {
 //   websocket.send("L" + slider.value);
@@ -214,6 +214,7 @@ const neutralizeJoystick = () => {
   joystick().stick.draw();
   document.getElementById("speed").innerText = 0;
   document.getElementById("speed-meter").style.width = 0 + "%";
+  websocket.send("L" + 0);
 };
 
 const startTilting = () => {
@@ -236,6 +237,7 @@ const tilt = () => {
     ).style.background = `linear-gradient(to right, rgba(0, 255, 255, 0.4) 0, rgba(0, 101, 255, 1) ${
       100 * (100 / speed)
     }%)`;
+    websocket.send("L" + speed);
   }
 };
 
