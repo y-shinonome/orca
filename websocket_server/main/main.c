@@ -51,7 +51,8 @@ does use more RAM though.
 static QueueHandle_t client_queue;
 const static int client_queue_size = 10;
 
-static ledc_channel_config_t ledc_channel;
+static ledc_channel_config_t led_blue;
+static ledc_channel_config_t led_yellow;
 
 // handles WiFi events
 static esp_err_t event_handler(void* ctx, system_event_t* event) {
@@ -141,13 +142,22 @@ static void wifi_setup() {
 }
 
 // sets up the led for pwm
-static void led_duty(uint16_t duty) {
+static void led_blue_duty(uint16_t duty) {
   static uint16_t val;
   static uint16_t max = (1L<<10)-1;
   if(duty > 100) return;
   val = (duty * max) / 100;
-  ledc_set_duty(ledc_channel.speed_mode,ledc_channel.channel,val);
-  ledc_update_duty(ledc_channel.speed_mode,ledc_channel.channel);
+  ledc_set_duty(led_blue.speed_mode,led_blue.channel,val);
+  ledc_update_duty(led_blue.speed_mode,led_blue.channel);
+}
+
+static void led_yellow_duty(uint16_t duty) {
+  static uint16_t val;
+  static uint16_t max = (1L<<10)-1;
+  if(duty > 100) return;
+  val = (duty * max) / 100;
+  ledc_set_duty(led_yellow.speed_mode,led_yellow.channel,val);
+  ledc_update_duty(led_yellow.speed_mode,led_yellow.channel);
 }
 
 static void led_setup() {
@@ -160,15 +170,23 @@ static void led_setup() {
     .timer_num       = LEDC_TIMER_0
   };
 
-  ledc_channel.channel = LEDC_CHANNEL_0;
-  ledc_channel.duty = 0;
-  ledc_channel.gpio_num = LED_PIN,
-  ledc_channel.speed_mode = LEDC_HIGH_SPEED_MODE;
-  ledc_channel.timer_sel = LEDC_TIMER_0;
+  led_blue.channel = LEDC_CHANNEL_0;
+  led_blue.duty = 0;
+  led_blue.gpio_num = LED_PIN,
+  led_blue.speed_mode = LEDC_HIGH_SPEED_MODE;
+  led_blue.timer_sel = LEDC_TIMER_0;
+
+  led_yellow.channel = LEDC_CHANNEL_1;
+  led_yellow.duty = 0;
+  led_yellow.gpio_num = 0,
+  led_yellow.speed_mode = LEDC_HIGH_SPEED_MODE;
+  led_yellow.timer_sel = LEDC_TIMER_0;
 
   ledc_timer_config(&ledc_timer);
-  ledc_channel_config(&ledc_channel);
-  led_duty(0);
+  ledc_channel_config(&led_blue);
+  ledc_channel_config(&led_yellow);
+  led_blue_duty(0);
+  led_yellow_duty(0);
   ESP_LOGI(TAG,"led is off and ready, 10 bits");
 }
 
@@ -183,14 +201,16 @@ void websocket_callback(uint8_t num,WEBSOCKET_TYPE_t type,char* msg,uint64_t len
       break;
     case WEBSOCKET_DISCONNECT_EXTERNAL:
       ESP_LOGI(TAG,"client %i sent a disconnect message",num);
-      led_duty(0);
+      led_blue_duty(0);
+      led_yellow_duty(0);
       break;
     case WEBSOCKET_DISCONNECT_INTERNAL:
       ESP_LOGI(TAG,"client %i was disconnected",num);
       break;
     case WEBSOCKET_DISCONNECT_ERROR:
       ESP_LOGI(TAG,"client %i was disconnected due to an error",num);
-      led_duty(0);
+      led_blue_duty(0);
+      led_yellow_duty(0);
       break;
     case WEBSOCKET_TEXT:
       if(len) { // if the message length was greater than zero
@@ -198,7 +218,8 @@ void websocket_callback(uint8_t num,WEBSOCKET_TYPE_t type,char* msg,uint64_t len
           case 'L':
             if(sscanf(msg,"L%i",&value)) {
               ESP_LOGI(TAG,"LED value: %i",value);
-              led_duty(value);
+              led_blue_duty(value);
+              led_yellow_duty(value);
               ws_server_send_text_all_from_callback(msg,len); // broadcast it!
             }
             break;
