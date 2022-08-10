@@ -60,7 +60,7 @@ const joystick = () => {
   const stick = () => {
     const canvas = document.getElementById("stick");
     const context = canvas.getContext("2d");
-    const angle = (x, y) => {
+    const radian = (x, y) => {
       return Math.atan2(y - y_origin, x - x_origin);
     };
 
@@ -78,9 +78,9 @@ const joystick = () => {
         y = y_origin;
       }
 
-      const angle = stick().angle(x, y);
-      const extention_x = radius * Math.cos(angle) + x_origin;
-      const extention_y = radius * Math.sin(angle) + y_origin;
+      const radian = stick().radian(x, y);
+      const extention_x = radius * Math.cos(radian) + x_origin;
+      const extention_y = radius * Math.sin(radian) + y_origin;
 
       if (!isInsideCircle(x, y)) {
         x = extention_x;
@@ -92,6 +92,15 @@ const joystick = () => {
         extention_x: extention_x,
         extention_y: extention_y,
       };
+    };
+
+    const degree = (x, y) => {
+      let degree =
+        Math.round(joystick().stick.radian(x, y) * (180 / Math.PI)) + 90;
+      if (degree === 270) {
+        degree = -90;
+      }
+      return degree;
     };
 
     const draw = (x = x_origin, y = y_origin, extention_x, extention_y) => {
@@ -117,9 +126,10 @@ const joystick = () => {
     return {
       canvas: canvas,
       context: context,
-      angle: angle,
+      radian: radian,
       speed: speed,
       position: position,
+      degree: degree,
       draw: draw,
     };
   };
@@ -230,6 +240,7 @@ const tilt = () => {
     joystick().stick.draw(stick_x, stick_y, extention_x, extention_y);
 
     const speed = joystick().stick.speed(stick_x, stick_y);
+
     document.getElementById("speed").innerText = speed;
     document.getElementById("speed-meter").style.width = speed + "%";
     document.getElementById(
@@ -237,7 +248,25 @@ const tilt = () => {
     ).style.background = `linear-gradient(to right, rgba(0, 255, 255, 0.4) 0, rgba(0, 101, 255, 1) ${
       100 * (100 / speed)
     }%)`;
-    websocket.send("L" + speed);
+
+    const degree = joystick().stick.degree(extention_x, extention_y);
+
+    const duty_L = () => {
+      if (degree < 0) {
+        return Math.round(100 / (100 / speed));
+      } else {
+        return Math.round((100 - 100 * (degree / 90)) * (speed / 100));
+      }
+    };
+    const duty_R = () => {
+      if (degree > 0) {
+        return Math.round(100 / (100 / speed));
+      } else {
+        return Math.round((100 - 100 * (-degree / 90)) * (speed / 100));
+      }
+    };
+
+    websocket.send(`D${duty_L()}:${duty_R()}`);
   }
 };
 

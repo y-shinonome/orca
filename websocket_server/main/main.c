@@ -37,6 +37,7 @@ does use more RAM though.
 #include "esp_wifi.h"
 #include "esp_log.h"
 #include "esp_event_loop.h"
+#include "esp_adc_cal.h"
 #include "nvs_flash.h"
 #include "driver/ledc.h"
 
@@ -47,6 +48,7 @@ does use more RAM though.
 #define LED_PIN CONFIG_LED_PIN
 #define AP_SSID CONFIG_AP_SSID
 #define AP_PSSWD CONFIG_AP_PSSWD
+#define DEFAULT_VREF 1100
 
 static QueueHandle_t client_queue;
 const static int client_queue_size = 10;
@@ -194,6 +196,8 @@ static void led_setup() {
 void websocket_callback(uint8_t num,WEBSOCKET_TYPE_t type,char* msg,uint64_t len) {
   const static char* TAG = "websocket_callback";
   int value;
+  int L;
+  int R;
 
   switch(type) {
     case WEBSOCKET_CONNECT:
@@ -223,11 +227,20 @@ void websocket_callback(uint8_t num,WEBSOCKET_TYPE_t type,char* msg,uint64_t len
               ws_server_send_text_all_from_callback(msg,len); // broadcast it!
             }
             break;
+          case 'D':
+            if(sscanf(msg,"D%i:%i",&L,&R)) {
+              ESP_LOGI(TAG,"LED value: %i : %i",L,R);
+              led_blue_duty(L);
+              led_yellow_duty(R);
+              ws_server_send_text_all_from_callback(msg,len); // broadcast it!
+            }
+            break;
           case 'M':
             ESP_LOGI(TAG, "got message length %i: %s", (int)len-1, &(msg[1]));
             break;
           default:
 	          ESP_LOGI(TAG, "got an unknown message with length %i", (int)len);
+            printf(msg);
 	          break;
         }
       }
@@ -429,11 +442,39 @@ static void count_task(void* pvParameters) {
   }
 }
 
-void app_main() {
+static void adc_task(void* pvParameters) {
+  const static char* TAG = "adc_task";
+  const int DELAY = 250 / portTICK_PERIOD_MS;
+  static const adc_unit_t unit = ADC_UNIT_1;
+  static const adc_channel_t channel = ADC_CHANNEL_6;
+  static const adc_atten_t atten = ADC_ATTEN_DB_6;
+  static const adc_bits_width_t width = ADC_WIDTH_BIT_12;
+
+  adc1_config_width(width);
+  adc1_config_channel_atten(channel, atten);
+
+  esp_adc_cal_characteristics_t *adc_chars = calloc(1, sizeof(esp_adc_cal_characteristics_t));
+  esp_adc_cal_characterize(unit, atten, width, DEFAULT_VREF, adc_chars);
+
+  for(;;) {
+    uint32_t adc_reading = 0;
+    adc_reading = adc1_get_raw((adc1_channel_t)channel);
+
+    uint32_t voltage = esp_adc_cal_raw_to_voltage(adc_reading, adc_chars);
+    uint32_t batteryVoltage = voltage * 5.168;
+
+    ESP_LOGI(TAG,"raw: %d bit %d mV   battery: %d mV",adc_reading, voltage, batteryVoltage);
+    
+    vTaskDelay(DELAY);
+  }
+}
+
+  void app_main() {
   wifi_setup();
   led_setup();
   ws_server_start();
   xTaskCreate(&server_task,"server_task",3000,NULL,9,NULL);
   xTaskCreate(&server_handle_task,"server_handle_task",4000,NULL,6,NULL);
   xTaskCreate(&count_task,"count_task",6000,NULL,2,NULL);
+  xTaskCreate(&adc_task,"adc_task",2000,NULL,1,NULL);
 }
