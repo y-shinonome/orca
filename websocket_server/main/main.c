@@ -167,19 +167,19 @@ static void led_setup() {
 
   ledc_timer_config_t ledc_timer = {
     .duty_resolution = LEDC_TIMER_10_BIT,
-    .freq_hz         = 5000,
+    .freq_hz         = 400,
     .speed_mode      = LEDC_HIGH_SPEED_MODE,
     .timer_num       = LEDC_TIMER_0
   };
 
   led_blue.channel = LEDC_CHANNEL_0;
-  led_blue.duty = 0;
+  led_blue.duty = 40;
   led_blue.gpio_num = LED_PIN,
   led_blue.speed_mode = LEDC_HIGH_SPEED_MODE;
   led_blue.timer_sel = LEDC_TIMER_0;
 
   led_yellow.channel = LEDC_CHANNEL_1;
-  led_yellow.duty = 0;
+  led_yellow.duty = 40;
   led_yellow.gpio_num = 0,
   led_yellow.speed_mode = LEDC_HIGH_SPEED_MODE;
   led_yellow.timer_sel = LEDC_TIMER_0;
@@ -187,8 +187,8 @@ static void led_setup() {
   ledc_timer_config(&ledc_timer);
   ledc_channel_config(&led_blue);
   ledc_channel_config(&led_yellow);
-  led_blue_duty(0);
-  led_yellow_duty(0);
+  led_blue_duty(40);
+  led_yellow_duty(40);
   ESP_LOGI(TAG,"led is off and ready, 10 bits");
 }
 
@@ -205,16 +205,16 @@ void websocket_callback(uint8_t num,WEBSOCKET_TYPE_t type,char* msg,uint64_t len
       break;
     case WEBSOCKET_DISCONNECT_EXTERNAL:
       ESP_LOGI(TAG,"client %i sent a disconnect message",num);
-      led_blue_duty(0);
-      led_yellow_duty(0);
+      led_blue_duty(40);
+      led_yellow_duty(40);
       break;
     case WEBSOCKET_DISCONNECT_INTERNAL:
       ESP_LOGI(TAG,"client %i was disconnected",num);
       break;
     case WEBSOCKET_DISCONNECT_ERROR:
       ESP_LOGI(TAG,"client %i was disconnected due to an error",num);
-      led_blue_duty(0);
-      led_yellow_duty(0);
+      led_blue_duty(40);
+      led_yellow_duty(40);
       break;
     case WEBSOCKET_TEXT:
       if(len) { // if the message length was greater than zero
@@ -463,7 +463,7 @@ static void adc_task(void* pvParameters) {
     uint32_t voltage = esp_adc_cal_raw_to_voltage(adc_reading, adc_chars);
     uint32_t batteryVoltage = voltage * 5.168;
 
-    ESP_LOGI(TAG,"raw: %d bit %d mV   battery: %d mV",adc_reading, voltage, batteryVoltage);
+    // ESP_LOGI(TAG,"raw: %d bit %d mV   battery: %d mV",adc_reading, voltage, batteryVoltage);
     
     vTaskDelay(DELAY);
   }

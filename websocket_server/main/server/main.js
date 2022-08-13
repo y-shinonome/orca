@@ -224,7 +224,7 @@ const neutralizeJoystick = () => {
   joystick().stick.draw();
   document.getElementById("speed").innerText = 0;
   document.getElementById("speed-meter").style.width = 0 + "%";
-  websocket.send("L" + 0);
+  websocket.send("D40:40");
 };
 
 const startTilting = () => {
@@ -253,16 +253,16 @@ const tilt = () => {
 
     const duty_L = () => {
       if (degree < 0) {
-        return Math.round(100 / (100 / speed));
+        return Math.round(40 + (40 * speed) / 100);
       } else {
-        return Math.round((100 - 100 * (degree / 90)) * (speed / 100));
+        return 40 + Math.round(40 * (1 - degree / 90) * (speed / 100));
       }
     };
     const duty_R = () => {
       if (degree > 0) {
-        return Math.round(100 / (100 / speed));
+        return Math.round(40 + (40 * speed) / 100);
       } else {
-        return Math.round((100 - 100 * (-degree / 90)) * (speed / 100));
+        return 40 + Math.round(40 * (1 - -degree / 90) * (speed / 100));
       }
     };
 
