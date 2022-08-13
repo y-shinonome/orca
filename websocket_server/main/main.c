@@ -42,6 +42,7 @@ does use more RAM though.
 #include "driver/ledc.h"
 
 #include "string.h"
+#include "math.h"
 
 #include "websocket_server.h"
 
@@ -229,7 +230,7 @@ void websocket_callback(uint8_t num,WEBSOCKET_TYPE_t type,char* msg,uint64_t len
             break;
           case 'D':
             if(sscanf(msg,"D%i:%i",&L,&R)) {
-              ESP_LOGI(TAG,"LED value: %i : %i",L,R);
+              // ESP_LOGI(TAG,"LED value: %i : %i",L,R);
               led_blue_duty(L);
               led_yellow_duty(R);
               ws_server_send_text_all_from_callback(msg,len); // broadcast it!
@@ -442,12 +443,39 @@ static void count_task(void* pvParameters) {
   }
 }
 
+// static void adc_task(void* pvParameters) {
+//   const static char* TAG = "adc_task";
+//   const int DELAY = 250 / portTICK_PERIOD_MS;
+//   static const adc_unit_t unit = ADC_UNIT_1;
+//   static const adc_channel_t channel = ADC_CHANNEL_6;
+//   static const adc_atten_t atten = ADC_ATTEN_DB_6;
+//   static const adc_bits_width_t width = ADC_WIDTH_BIT_12;
+
+//   adc1_config_width(width);
+//   adc1_config_channel_atten(channel, atten);
+
+//   esp_adc_cal_characteristics_t *adc_chars = calloc(1, sizeof(esp_adc_cal_characteristics_t));
+//   esp_adc_cal_characterize(unit, atten, width, DEFAULT_VREF, adc_chars);
+
+//   for(;;) {
+//     uint32_t adc_reading = 0;
+//     adc_reading = adc1_get_raw((adc1_channel_t)channel);
+
+//     uint32_t voltage = esp_adc_cal_raw_to_voltage(adc_reading, adc_chars);
+//     uint32_t batteryVoltage = voltage * 5.168;
+
+//     ESP_LOGI(TAG,"raw: %d bit %d mV   battery: %d mV",adc_reading, voltage, batteryVoltage);
+    
+//     vTaskDelay(DELAY);
+//   }
+// }
+
 static void adc_task(void* pvParameters) {
   const static char* TAG = "adc_task";
-  const int DELAY = 250 / portTICK_PERIOD_MS;
+  const int DELAY = 200 / portTICK_PERIOD_MS;
   static const adc_unit_t unit = ADC_UNIT_1;
   static const adc_channel_t channel = ADC_CHANNEL_6;
-  static const adc_atten_t atten = ADC_ATTEN_DB_6;
+  static const adc_atten_t atten = ADC_ATTEN_DB_11;
   static const adc_bits_width_t width = ADC_WIDTH_BIT_12;
 
   adc1_config_width(width);
@@ -461,9 +489,10 @@ static void adc_task(void* pvParameters) {
     adc_reading = adc1_get_raw((adc1_channel_t)channel);
 
     uint32_t voltage = esp_adc_cal_raw_to_voltage(adc_reading, adc_chars);
-    uint32_t batteryVoltage = voltage * 5.168;
+    uint32_t amperage = round(voltage * 6800 / 2400);
+    // uint32_t amperage = voltage * 6800 / 2400;
 
-    // ESP_LOGI(TAG,"raw: %d bit %d mV   battery: %d mV",adc_reading, voltage, batteryVoltage);
+    ESP_LOGI(TAG,"raw: %d mA %d bit %d mV",amperage, adc_reading, voltage);
     
     vTaskDelay(DELAY);
   }
