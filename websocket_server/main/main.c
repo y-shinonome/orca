@@ -444,7 +444,6 @@ static void server_handle_task(void* pvParameters) {
 // }
 
 static void batteryVoltageMeasurement_task(void* pvParameters) {
-  const static char* TAG = "batteryVoltageMeasurement_task";
   const int DELAY = 200 / portTICK_PERIOD_MS;
   static const adc_unit_t unit = ADC_UNIT_1;
   static const adc_channel_t channel = ADC_CHANNEL_7;
@@ -458,19 +457,31 @@ static void batteryVoltageMeasurement_task(void* pvParameters) {
   esp_adc_cal_characterize(unit, atten, width, DEFAULT_VREF, adc_chars);
 
   for(;;) {
-    uint32_t adc_reading = 0;
-    adc_reading = adc1_get_raw((adc1_channel_t)channel);
+    uint32_t adcReading = 0;
+    int sampleCount = 0;
+    uint32_t current_adc;
+    for (int i = 0; i < 16; i++) {
+      current_adc = 0;
+      current_adc = adc1_get_raw((adc1_channel_t)channel);
+      if(current_adc > 0) {
+        adcReading += current_adc;
+        sampleCount += 1;
+      }
+      vTaskDelay(2/portTICK_PERIOD_MS);
+    }
 
-    uint32_t voltage = esp_adc_cal_raw_to_voltage(adc_reading, adc_chars);
+    if(sampleCount > 0) {
+      adcReading /= sampleCount;
+    }
+
+    uint32_t voltage = esp_adc_cal_raw_to_voltage(adcReading, adc_chars);
     uint32_t batteryVoltage = voltage * 5.168;
-    ESP_LOGI(TAG,"%d",batteryVoltage);
 
     char msg[10];
     sprintf(msg, "V%d", batteryVoltage);
 
     int len =strlen(msg);
     
-    ESP_LOGI(TAG,"%d",len);
     int clients = ws_server_send_text_all(msg, len);
     if(clients > 0) {
       //ESP_LOGI(TAG,"sent: \"%s\" to %i clients",out,clients);
@@ -480,8 +491,7 @@ static void batteryVoltageMeasurement_task(void* pvParameters) {
 }
 
 static void motorPowerMeasurement_task(void* pvParameters) {
-  const static char* TAG = "motorPowerMeasurement_task";
-  const int DELAY = 200 / portTICK_PERIOD_MS;
+  const int DELAY = 100 / portTICK_PERIOD_MS;
   static const adc_unit_t unit = ADC_UNIT_1;
   static const adc_channel_t channel = ADC_CHANNEL_6;
   static const adc_atten_t atten = ADC_ATTEN_DB_11;
@@ -494,18 +504,32 @@ static void motorPowerMeasurement_task(void* pvParameters) {
   esp_adc_cal_characterize(unit, atten, width, DEFAULT_VREF, adc_chars);
 
   for(;;) {
-    uint32_t adc_reading = 0;
-    adc_reading = adc1_get_raw((adc1_channel_t)channel);
+    uint32_t adcReading = 0;
+    int sampleCount = 0;
+    uint32_t current_adc;
 
-    uint32_t voltage = esp_adc_cal_raw_to_voltage(adc_reading, adc_chars);
+    for (int i = 0; i < 64; i++) {
+      current_adc = 0;
+      current_adc = adc1_get_raw((adc1_channel_t)channel);
+      if(current_adc > 0) {
+        adcReading += current_adc;
+        sampleCount += 1;
+      }
+      vTaskDelay(2/portTICK_PERIOD_MS);
+    }
+
+    if(sampleCount > 0) {
+      adcReading /= sampleCount;
+    }
+
+    uint32_t voltage = esp_adc_cal_raw_to_voltage(adcReading, adc_chars);
     uint32_t amperage = round(voltage * 6800 / 2400);
-    ESP_LOGI(TAG,"%d",amperage);
+    printf("%d / %d = %d : %d mA\n", adcReading, sampleCount, adcReading, amperage);
 
     char msg[10];
     sprintf(msg, "L%d", amperage);
     int len = strlen(msg);
 
-    ESP_LOGI(TAG,"%d",len);
     int clients = ws_server_send_text_all(msg, len);
     if(clients > 0) {
       //ESP_LOGI(TAG,"sent: \"%s\" to %i clients",out,clients);

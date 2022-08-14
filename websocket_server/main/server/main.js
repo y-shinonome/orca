@@ -42,6 +42,9 @@ websocket.onmessage = (evt) => {
   switch (msg.charAt(0)) {
     case "V":
       const batteryVoltage = msg.replace(/[^0-9\.]/g, "");
+      if (batteryVoltage === "552") {
+        batteryVoltage = "0";
+      }
       document.getElementById("battery").innerHTML = batteryVoltage;
       break;
     case "L":
