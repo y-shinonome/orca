@@ -37,6 +37,24 @@ websocket.onopen = function (evt) {
 //       break;
 //   }
 // };
+websocket.onmessage = (evt) => {
+  const msg = evt.data;
+  switch (msg.charAt(0)) {
+    case "V":
+      const batteryVoltage = msg.replace(/[^0-9\.]/g, "");
+      document.getElementById("battery").innerHTML = batteryVoltage;
+      break;
+    case "L":
+      let amperage = msg.replace(/[^0-9\.]/g, "");
+      if (amperage === "402") {
+        amperage = "0";
+      }
+      document.getElementById("amperage").innerHTML = amperage;
+      break;
+    default:
+      break;
+  }
+};
 
 websocket.onclose = function (evt) {
   // console.log("Websocket connection closed");

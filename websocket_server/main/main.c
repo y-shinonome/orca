@@ -422,56 +422,65 @@ static void server_handle_task(void* pvParameters) {
   vTaskDelete(NULL);
 }
 
-static void count_task(void* pvParameters) {
-  const static char* TAG = "count_task";
-  char out[20];
-  int len;
-  int clients;
-  const static char* word = "%i";
-  uint8_t n = 0;
-  const int DELAY = 1000 / portTICK_PERIOD_MS; // 1 second
+// static void count_task(void* pvParameters) {
+//   const static char* TAG = "count_task";
+//   char out[20];
+//   int len;
+//   int clients;
+//   const static char* word = "%i";
+//   uint8_t n = 0;
+//   const int DELAY = 1000 / portTICK_PERIOD_MS; // 1 second
 
-  ESP_LOGI(TAG,"starting task");
-  for(;;) {
-    len = sprintf(out,word,n);
-    clients = ws_server_send_text_all(out,len);
-    if(clients > 0) {
-      //ESP_LOGI(TAG,"sent: \"%s\" to %i clients",out,clients);
-    }
-    n++;
-    vTaskDelay(DELAY);
-  }
-}
-
-// static void adc_task(void* pvParameters) {
-//   const static char* TAG = "adc_task";
-//   const int DELAY = 250 / portTICK_PERIOD_MS;
-//   static const adc_unit_t unit = ADC_UNIT_1;
-//   static const adc_channel_t channel = ADC_CHANNEL_6;
-//   static const adc_atten_t atten = ADC_ATTEN_DB_6;
-//   static const adc_bits_width_t width = ADC_WIDTH_BIT_12;
-
-//   adc1_config_width(width);
-//   adc1_config_channel_atten(channel, atten);
-
-//   esp_adc_cal_characteristics_t *adc_chars = calloc(1, sizeof(esp_adc_cal_characteristics_t));
-//   esp_adc_cal_characterize(unit, atten, width, DEFAULT_VREF, adc_chars);
-
+//   ESP_LOGI(TAG,"starting task");
 //   for(;;) {
-//     uint32_t adc_reading = 0;
-//     adc_reading = adc1_get_raw((adc1_channel_t)channel);
-
-//     uint32_t voltage = esp_adc_cal_raw_to_voltage(adc_reading, adc_chars);
-//     uint32_t batteryVoltage = voltage * 5.168;
-
-//     ESP_LOGI(TAG,"raw: %d bit %d mV   battery: %d mV",adc_reading, voltage, batteryVoltage);
-    
+//     len = sprintf(out,word,n);
+//     clients = ws_server_send_text_all(out,len);
+//     if(clients > 0) {
+//       //ESP_LOGI(TAG,"sent: \"%s\" to %i clients",out,clients);
+//     }
+//     n++;
 //     vTaskDelay(DELAY);
 //   }
 // }
 
-static void adc_task(void* pvParameters) {
-  const static char* TAG = "adc_task";
+static void batteryVoltageMeasurement_task(void* pvParameters) {
+  const static char* TAG = "batteryVoltageMeasurement_task";
+  const int DELAY = 200 / portTICK_PERIOD_MS;
+  static const adc_unit_t unit = ADC_UNIT_1;
+  static const adc_channel_t channel = ADC_CHANNEL_7;
+  static const adc_atten_t atten = ADC_ATTEN_DB_6;
+  static const adc_bits_width_t width = ADC_WIDTH_BIT_12;
+
+  adc1_config_width(width);
+  adc1_config_channel_atten(channel, atten);
+
+  esp_adc_cal_characteristics_t *adc_chars = calloc(1, sizeof(esp_adc_cal_characteristics_t));
+  esp_adc_cal_characterize(unit, atten, width, DEFAULT_VREF, adc_chars);
+
+  for(;;) {
+    uint32_t adc_reading = 0;
+    adc_reading = adc1_get_raw((adc1_channel_t)channel);
+
+    uint32_t voltage = esp_adc_cal_raw_to_voltage(adc_reading, adc_chars);
+    uint32_t batteryVoltage = voltage * 5.168;
+    ESP_LOGI(TAG,"%d",batteryVoltage);
+
+    char msg[10];
+    sprintf(msg, "V%d", batteryVoltage);
+
+    int len =strlen(msg);
+    
+    ESP_LOGI(TAG,"%d",len);
+    int clients = ws_server_send_text_all(msg, len);
+    if(clients > 0) {
+      //ESP_LOGI(TAG,"sent: \"%s\" to %i clients",out,clients);
+    }
+    vTaskDelay(DELAY);
+  }
+}
+
+static void motorPowerMeasurement_task(void* pvParameters) {
+  const static char* TAG = "motorPowerMeasurement_task";
   const int DELAY = 200 / portTICK_PERIOD_MS;
   static const adc_unit_t unit = ADC_UNIT_1;
   static const adc_channel_t channel = ADC_CHANNEL_6;
@@ -490,10 +499,17 @@ static void adc_task(void* pvParameters) {
 
     uint32_t voltage = esp_adc_cal_raw_to_voltage(adc_reading, adc_chars);
     uint32_t amperage = round(voltage * 6800 / 2400);
-    // uint32_t amperage = voltage * 6800 / 2400;
+    ESP_LOGI(TAG,"%d",amperage);
 
-    ESP_LOGI(TAG,"raw: %d mA %d bit %d mV",amperage, adc_reading, voltage);
-    
+    char msg[10];
+    sprintf(msg, "L%d", amperage);
+    int len = strlen(msg);
+
+    ESP_LOGI(TAG,"%d",len);
+    int clients = ws_server_send_text_all(msg, len);
+    if(clients > 0) {
+      //ESP_LOGI(TAG,"sent: \"%s\" to %i clients",out,clients);
+    }
     vTaskDelay(DELAY);
   }
 }
@@ -504,6 +520,7 @@ static void adc_task(void* pvParameters) {
   ws_server_start();
   xTaskCreate(&server_task,"server_task",3000,NULL,9,NULL);
   xTaskCreate(&server_handle_task,"server_handle_task",4000,NULL,6,NULL);
-  xTaskCreate(&count_task,"count_task",6000,NULL,2,NULL);
-  xTaskCreate(&adc_task,"adc_task",2000,NULL,1,NULL);
+  // xTaskCreate(&count_task,"count_task",6000,NULL,2,NULL);
+  xTaskCreate(&batteryVoltageMeasurement_task,"batteryVoltageMeasurement_task",2000,NULL,1,NULL);
+  xTaskCreate(&motorPowerMeasurement_task,"motorPowerMeasurement_task",2000,NULL,1,NULL);
 }
