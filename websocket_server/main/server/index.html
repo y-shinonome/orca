@@ -11,7 +11,7 @@
     <div class="page-container">
       <!-- <h1>Hello World!</h1> -->
       <h1 class="py-5">ORCA</h1>
-      <p id="state" class="py-3 px-6"></p>
+      <p id="state" class="state py-3 px-6"></p>
       <!-- <p>This is being hosted from an ESP32 running freeRTOS. Whattup.</p>
     <p>
       The below bar should change an LED brightness connected to the
@@ -27,20 +27,36 @@
           id="myRange"
         />
       </div> -->
-      <div class="speed-meter py-3 px-6">
-        <p class="value">
-          <span> Speed: <span id="speed"> </span>%</span>
-        </p>
+
+      <div class="meter-container speed-meter py-3 px-6">
+        <p class="name">Speed</p>
+        <p id="speed" class="value"></p>
         <div class="meter">
-          <div id="speed-meter" class="bar"></div>
+          <div id="speed-bar" class="bar"></div>
         </div>
       </div>
-      <p>Battery: <span id="battery">0</span>mV</p>
-      <p>Motor: <span id="amperage">0</span>mA</p>
+
+      <div class="meter-container py-3 px-6">
+        <p class="name">Battery</p>
+        <p id="battery" class="value"></p>
+        <div class="meter">
+          <div id="battery-bar" class="bar"></div>
+        </div>
+      </div>
+
+      <div class="meter-container py-3 px-6">
+        <p class="name">Motor(L)</p>
+        <p id="left-motor-amperage" class="value"></p>
+        <div class="meter">
+          <div id="left-motor-bar" class="bar"></div>
+        </div>
+      </div>
+
       <div id="joystick" class="joystick-container">
         <canvas id="background"></canvas>
         <canvas id="stick"></canvas>
       </div>
+
       <!-- <form id="frm1" action="#">
       Send text: <input type="text" name="ftext" /><br />
       <button

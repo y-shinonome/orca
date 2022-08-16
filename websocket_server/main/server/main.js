@@ -1,4 +1,4 @@
-document.getElementById("state").innerHTML = "WebSocket is not connected";
+document.getElementById("state").innerText = "WebSocket is not connected";
 
 let websocket = new WebSocket("ws://" + location.hostname + "/");
 // let slider = document.getElementById("myRange");
@@ -19,10 +19,10 @@ let websocket = new WebSocket("ws://" + location.hostname + "/");
 websocket.onopen = function (evt) {
   // console.log("WebSocket connection opened");
   // websocket.send("It's open! Hooray!!!");
-  document.getElementById("state").innerHTML = "WebSocket is connected";
+  document.getElementById("state").innerText = "WebSocket is connected";
 };
 
-// websocket.onmessage = function (evt) {
+// websocket.onmessage = function (evt) {nerHTML
 //   let msg = evt.data;
 //   let value;
 //   switch (msg.charAt(0)) {
@@ -33,7 +33,7 @@ websocket.onopen = function (evt) {
 //       console.log("Led = " + value);
 //       break;
 //     default:
-//       document.getElementById("output").innerHTML = evt.data;
+//       document.getElementById("output").innerText = evt.data;
 //       break;
 //   }
 // };
@@ -41,19 +41,44 @@ websocket.onmessage = (evt) => {
   const msg = evt.data;
   switch (msg.charAt(0)) {
     case "V":
-      const batteryVoltage = msg.replace(/[^0-9\.]/g, "");
+      let batteryVoltage = msg.replace(/[^0-9\.]/g, "");
       if (batteryVoltage === "552") {
-        batteryVoltage = "0";
+        batteryVoltage = 0;
       }
-      document.getElementById("battery").innerHTML = batteryVoltage;
+
+      document.getElementById("battery").innerText =
+        (batteryVoltage / 1000).toFixed(3) + "V";
+
+      let batteryLevel = Math.round(((batteryVoltage - 7000) / 1400) * 100);
+      if (batteryLevel > 100) {
+        batteryLevel = 100;
+      } else if (batteryLevel < 0) {
+        batteryLevel = 0;
+      }
+
+      document.getElementById("battery-bar").style.width = batteryLevel + "%";
+      document.getElementById(
+        "battery-bar"
+      ).style.background = `linear-gradient(to right, rgba(255, 0, 0, 0.5) 0,rgba(255, 255, 0, 0.5) ${
+        50 * (100 / batteryLevel)
+      }%, rgba(0, 255, 0, 0.5) ${100 * (100 / batteryLevel)}%)`;
       break;
+
     case "L":
       let amperage = msg.replace(/[^0-9\.]/g, "");
       if (amperage === "402") {
         amperage = "0";
       }
-      document.getElementById("amperage").innerHTML = amperage;
+      document.getElementById("left-motor-amperage").innerText =
+        (amperage / 1000).toFixed(3) + "A";
+      document.getElementById("left-motor-bar").style.width =
+        Math.round((amperage / 6800) * 100) + "%";
+      +"%";
+      document.getElementById(
+        "left-motor-bar"
+      ).style.background = `linear-gradient(to right, rgba(0, 255, 255, 0.4) 0, rgba(0, 101, 0, 1) 100)`;
       break;
+
     default:
       break;
   }
@@ -61,12 +86,12 @@ websocket.onmessage = (evt) => {
 
 websocket.onclose = function (evt) {
   // console.log("Websocket connection closed");
-  document.getElementById("state").innerHTML = "WebSocket closed";
+  document.getElementById("state").innerText = "WebSocket closed";
 };
 
 websocket.onerror = function (evt) {
   // console.log("Websocket error: " + evt);
-  document.getElementById("state").innerHTML = "WebSocket error!";
+  document.getElementById("state").innerText = "WebSocket error!";
 };
 
 let onMouseDown = false;
@@ -243,8 +268,8 @@ const resizeWindow = () => {
 
 const neutralizeJoystick = () => {
   joystick().stick.draw();
-  document.getElementById("speed").innerText = 0;
-  document.getElementById("speed-meter").style.width = 0 + "%";
+  document.getElementById("speed").innerText = 0 + "%";
+  document.getElementById("speed-bar").style.width = 0 + "%";
   websocket.send("D40:40");
 };
 
@@ -262,11 +287,11 @@ const tilt = () => {
 
     const speed = joystick().stick.speed(stick_x, stick_y);
 
-    document.getElementById("speed").innerText = speed;
-    document.getElementById("speed-meter").style.width = speed + "%";
+    document.getElementById("speed").innerText = speed + "%";
+    document.getElementById("speed-bar").style.width = speed + "%";
     document.getElementById(
-      "speed-meter"
-    ).style.background = `linear-gradient(to right, rgba(0, 255, 255, 0.4) 0, rgba(0, 101, 255, 1) ${
+      "speed-bar"
+    ).style.background = `linear-gradient(to right, rgba(0, 198, 215, 0.8) 0, rgba(0, 101, 255, 0.8) ${
       100 * (100 / speed)
     }%)`;
 
