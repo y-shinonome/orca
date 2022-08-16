@@ -48,7 +48,7 @@ h1 {
 
 .state {
   margin: 3rem 0rem 5rem 0rem;
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .joystick-container {
@@ -64,9 +64,11 @@ h1 {
 .meter-container {
   display: flex;
   color: #eaeaea;
+  margin-bottom: 0.25rem;
 }
 .meter-container > .name {
   flex: 1;
+  font-weight: 600;
 }
 .meter-container > .value {
   flex: 1;
@@ -88,7 +90,6 @@ h1 {
   transition-property: width;
   transition-duration: 150ms;
 }
-
 .speed-meter > .meter > .bar {
   transition-property: none;
 }

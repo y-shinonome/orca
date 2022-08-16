@@ -1,4 +1,5 @@
 document.getElementById("state").innerText = "WebSocket is not connected";
+document.getElementById("state").style.color = "rgba(130, 147, 144, 1)";
 
 let websocket = new WebSocket("ws://" + location.hostname + "/");
 // let slider = document.getElementById("myRange");
@@ -20,6 +21,19 @@ websocket.onopen = function (evt) {
   // console.log("WebSocket connection opened");
   // websocket.send("It's open! Hooray!!!");
   document.getElementById("state").innerText = "WebSocket is connected";
+  document.getElementById("state").style.color = "rgba(178, 199, 255, 1)";
+};
+
+websocket.onclose = function (evt) {
+  // console.log("Websocket connection closed");
+  document.getElementById("state").innerText = "WebSocket closed";
+  document.getElementById("state").style.color = "rgba(130, 147, 144, 1)";
+};
+
+websocket.onerror = function (evt) {
+  // console.log("Websocket error: " + evt);
+  document.getElementById("state").innerText = "WebSocket error!";
+  document.getElementById("state").style.color = "rgba(255, 117, 94, 1)";
 };
 
 // websocket.onmessage = function (evt) {nerHTML
@@ -82,16 +96,6 @@ websocket.onmessage = (evt) => {
     default:
       break;
   }
-};
-
-websocket.onclose = function (evt) {
-  // console.log("Websocket connection closed");
-  document.getElementById("state").innerText = "WebSocket closed";
-};
-
-websocket.onerror = function (evt) {
-  // console.log("Websocket error: " + evt);
-  document.getElementById("state").innerText = "WebSocket error!";
 };
 
 let onMouseDown = false;
