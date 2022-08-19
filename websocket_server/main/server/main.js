@@ -78,19 +78,39 @@ websocket.onmessage = (evt) => {
       }%, rgba(0, 255, 0, 0.5) ${100 * (100 / batteryLevel)}%)`;
       break;
 
-    case "L":
-      let amperage = msg.replace(/[^0-9\.]/g, "");
-      if (amperage === "402") {
-        amperage = "0";
+    case "A":
+      const regexpMsg = msg.replace(/A/g, "");
+
+      let amperes = regexpMsg.split(",");
+      if (amperes[0] === "402") {
+        amperes[0] = "0";
       }
+      if (amperes[1] === "402") {
+        amperes[1] = "0";
+      }
+
+      const leftAmpereLevel = Math.round((amperes[0] / 6800) * 100);
+      const rightAmpereLevel = Math.round((amperes[1] / 6800) * 100);
+
       document.getElementById("left-motor-amperage").innerText =
-        (amperage / 1000).toFixed(3) + "A";
+        (amperes[0] / 1000).toFixed(3) + "A";
       document.getElementById("left-motor-bar").style.width =
-        Math.round((amperage / 6800) * 100) + "%";
-      +"%";
+        leftAmpereLevel + "%";
       document.getElementById(
         "left-motor-bar"
-      ).style.background = `linear-gradient(to right, rgba(0, 255, 255, 0.4) 0, rgba(0, 101, 0, 1) 100)`;
+      ).style.background = `linear-gradient(to right, rgba(0, 255, 255, 0.4) 0, rgba(0, 101, 0, 1) ${
+        100 * (100 / leftAmpereLevel)
+      }%)`;
+
+      document.getElementById("right-motor-amperage").innerText =
+        (amperes[1] / 1000).toFixed(3) + "A";
+      document.getElementById("right-motor-bar").style.width =
+        rightAmpereLevel + "%";
+      document.getElementById(
+        "right-motor-bar"
+      ).style.background = `linear-gradient(to right, rgba(0, 255, 255, 0.4) 0, rgba(0, 101, 0, 1) ${
+        100 * (100 / rightAmpereLevel)
+      }%)`;
       break;
 
     default:

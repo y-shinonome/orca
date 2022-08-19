@@ -446,7 +446,7 @@ static void server_handle_task(void* pvParameters) {
 static void batteryVoltageMeasurement_task(void* pvParameters) {
   const int DELAY = 200 / portTICK_PERIOD_MS;
   static const adc_unit_t unit = ADC_UNIT_1;
-  static const adc_channel_t channel = ADC_CHANNEL_7;
+  static const adc_channel_t channel = ADC_CHANNEL_4;
   static const adc_atten_t atten = ADC_ATTEN_DB_6;
   static const adc_bits_width_t width = ADC_WIDTH_BIT_12;
 
@@ -490,44 +490,61 @@ static void batteryVoltageMeasurement_task(void* pvParameters) {
   }
 }
 
-static void motorPowerMeasurement_task(void* pvParameters) {
+static void motorCurrentMeasurement_task(void* pvParameters) {
   const int DELAY = 100 / portTICK_PERIOD_MS;
   static const adc_unit_t unit = ADC_UNIT_1;
-  static const adc_channel_t channel = ADC_CHANNEL_6;
+  static const adc_channel_t motor_L = ADC_CHANNEL_6;
+  static const adc_channel_t motor_R = ADC_CHANNEL_7;
   static const adc_atten_t atten = ADC_ATTEN_DB_11;
   static const adc_bits_width_t width = ADC_WIDTH_BIT_12;
 
   adc1_config_width(width);
-  adc1_config_channel_atten(channel, atten);
+  adc1_config_channel_atten(motor_L, atten);
+  adc1_config_channel_atten(motor_R, atten);
 
   esp_adc_cal_characteristics_t *adc_chars = calloc(1, sizeof(esp_adc_cal_characteristics_t));
   esp_adc_cal_characterize(unit, atten, width, DEFAULT_VREF, adc_chars);
 
   for(;;) {
-    uint32_t adcReading = 0;
-    int sampleCount = 0;
-    uint32_t current_adc;
+    uint32_t adcReading_L = 0;
+    uint32_t adcReading_R = 0;
+    int sampleCount_L = 0;
+    int sampleCount_R = 0;
+    uint32_t currentAdcReading_L;
+    uint32_t currentAdcReading_R;
 
     for (int i = 0; i < 64; i++) {
-      current_adc = 0;
-      current_adc = adc1_get_raw((adc1_channel_t)channel);
-      if(current_adc > 0) {
-        adcReading += current_adc;
-        sampleCount += 1;
+      currentAdcReading_L = 0;
+      currentAdcReading_R = 0;
+
+      currentAdcReading_L = adc1_get_raw((adc1_channel_t)motor_L);
+      currentAdcReading_R = adc1_get_raw((adc1_channel_t)motor_R);
+
+      if(currentAdcReading_L > 0) {
+        adcReading_L += currentAdcReading_L;
+        sampleCount_L += 1;
+      }
+      if(currentAdcReading_R > 0) {
+        adcReading_R += currentAdcReading_R;
+        sampleCount_R += 1;
       }
       vTaskDelay(2/portTICK_PERIOD_MS);
     }
 
-    if(sampleCount > 0) {
-      adcReading /= sampleCount;
+    if(sampleCount_L > 0) {
+      adcReading_L /=  sampleCount_L;
+    }
+    if(sampleCount_R > 0) {
+      adcReading_R /=  sampleCount_R;
     }
 
-    uint32_t voltage = esp_adc_cal_raw_to_voltage(adcReading, adc_chars);
-    uint32_t amperage = round(voltage * 6800 / 2400);
-    printf("%d / %d = %d : %d mA\n", adcReading, sampleCount, adcReading, amperage);
+    uint32_t voltage_L = esp_adc_cal_raw_to_voltage(adcReading_L, adc_chars);
+    uint32_t amperage_L = round(voltage_L * 6800 / 2400);
+    uint32_t voltage_R = esp_adc_cal_raw_to_voltage(adcReading_R, adc_chars);
+    uint32_t amperage_R = round(voltage_R * 6800 / 2400);
 
-    char msg[10];
-    sprintf(msg, "L%d", amperage);
+    char msg[20];
+    sprintf(msg, "A%d,%d", amperage_L, amperage_R);
     int len = strlen(msg);
 
     int clients = ws_server_send_text_all(msg, len);
@@ -546,5 +563,5 @@ static void motorPowerMeasurement_task(void* pvParameters) {
   xTaskCreate(&server_handle_task,"server_handle_task",4000,NULL,6,NULL);
   // xTaskCreate(&count_task,"count_task",6000,NULL,2,NULL);
   xTaskCreate(&batteryVoltageMeasurement_task,"batteryVoltageMeasurement_task",2000,NULL,1,NULL);
-  xTaskCreate(&motorPowerMeasurement_task,"motorPowerMeasurement_task",2000,NULL,1,NULL);
+  xTaskCreate(&motorCurrentMeasurement_task,"motorCurrentMeasurement_task",2000,NULL,1,NULL);
 }
