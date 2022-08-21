@@ -54,8 +54,8 @@ does use more RAM though.
 static QueueHandle_t client_queue;
 const static int client_queue_size = 10;
 
-static ledc_channel_config_t led_blue;
-static ledc_channel_config_t led_yellow;
+static ledc_channel_config_t motor_L;
+static ledc_channel_config_t motor_R;
 
 // handles WiFi events
 static esp_err_t event_handler(void* ctx, system_event_t* event) {
@@ -145,26 +145,26 @@ static void wifi_setup() {
 }
 
 // sets up the led for pwm
-static void led_blue_duty(uint16_t duty) {
+static void motor_L_duty(uint16_t duty) {
   static uint16_t val;
   static uint16_t max = (1L<<10)-1;
   if(duty > 100) return;
   val = (duty * max) / 100;
-  ledc_set_duty(led_blue.speed_mode,led_blue.channel,val);
-  ledc_update_duty(led_blue.speed_mode,led_blue.channel);
+  ledc_set_duty(motor_L.speed_mode,motor_L.channel,val);
+  ledc_update_duty(motor_L.speed_mode,motor_L.channel);
 }
 
-static void led_yellow_duty(uint16_t duty) {
+static void motor_R_duty(uint16_t duty) {
   static uint16_t val;
   static uint16_t max = (1L<<10)-1;
   if(duty > 100) return;
   val = (duty * max) / 100;
-  ledc_set_duty(led_yellow.speed_mode,led_yellow.channel,val);
-  ledc_update_duty(led_yellow.speed_mode,led_yellow.channel);
+  ledc_set_duty(motor_R.speed_mode,motor_R.channel,val);
+  ledc_update_duty(motor_R.speed_mode,motor_R.channel);
 }
 
-static void led_setup() {
-  const static char* TAG = "led_setup";
+static void pwm_setup() {
+  const static char* TAG = "pwm_setup";
 
   ledc_timer_config_t ledc_timer = {
     .duty_resolution = LEDC_TIMER_10_BIT,
@@ -173,23 +173,23 @@ static void led_setup() {
     .timer_num       = LEDC_TIMER_0
   };
 
-  led_blue.channel = LEDC_CHANNEL_0;
-  led_blue.duty = 40;
-  led_blue.gpio_num = 7,
-  led_blue.speed_mode = LEDC_HIGH_SPEED_MODE;
-  led_blue.timer_sel = LEDC_TIMER_0;
+  motor_L.channel = LEDC_CHANNEL_0;
+  motor_L.duty = 40;
+  motor_L.gpio_num = 7,
+  motor_L.speed_mode = LEDC_HIGH_SPEED_MODE;
+  motor_L.timer_sel = LEDC_TIMER_0;
 
-  led_yellow.channel = LEDC_CHANNEL_1;
-  led_yellow.duty = 40;
-  led_yellow.gpio_num = 8,
-  led_yellow.speed_mode = LEDC_HIGH_SPEED_MODE;
-  led_yellow.timer_sel = LEDC_TIMER_0;
+  motor_R.channel = LEDC_CHANNEL_1;
+  motor_R.duty = 40;
+  motor_R.gpio_num = 8,
+  motor_R.speed_mode = LEDC_HIGH_SPEED_MODE;
+  motor_R.timer_sel = LEDC_TIMER_0;
 
   ledc_timer_config(&ledc_timer);
-  ledc_channel_config(&led_blue);
-  ledc_channel_config(&led_yellow);
-  led_blue_duty(40);
-  led_yellow_duty(40);
+  ledc_channel_config(&motor_L);
+  ledc_channel_config(&motor_R);
+  motor_L_duty(40);
+  motor_R_duty(40);
   ESP_LOGI(TAG,"led is off and ready, 10 bits");
 }
 
@@ -206,16 +206,16 @@ void websocket_callback(uint8_t num,WEBSOCKET_TYPE_t type,char* msg,uint64_t len
       break;
     case WEBSOCKET_DISCONNECT_EXTERNAL:
       ESP_LOGI(TAG,"client %i sent a disconnect message",num);
-      led_blue_duty(40);
-      led_yellow_duty(40);
+      motor_L_duty(40);
+      motor_R_duty(40);
       break;
     case WEBSOCKET_DISCONNECT_INTERNAL:
       ESP_LOGI(TAG,"client %i was disconnected",num);
       break;
     case WEBSOCKET_DISCONNECT_ERROR:
       ESP_LOGI(TAG,"client %i was disconnected due to an error",num);
-      led_blue_duty(40);
-      led_yellow_duty(40);
+      motor_L_duty(40);
+      motor_R_duty(40);
       break;
     case WEBSOCKET_TEXT:
       if(len) { // if the message length was greater than zero
@@ -223,16 +223,16 @@ void websocket_callback(uint8_t num,WEBSOCKET_TYPE_t type,char* msg,uint64_t len
           case 'L':
             if(sscanf(msg,"L%i",&value)) {
               ESP_LOGI(TAG,"LED value: %i",value);
-              led_blue_duty(value);
-              led_yellow_duty(value);
+              motor_L_duty(value);
+              motor_R_duty(value);
               ws_server_send_text_all_from_callback(msg,len); // broadcast it!
             }
             break;
           case 'D':
             if(sscanf(msg,"D%i:%i",&L,&R)) {
               // ESP_LOGI(TAG,"LED value: %i : %i",L,R);
-              led_blue_duty(L);
-              led_yellow_duty(R);
+              motor_L_duty(L);
+              motor_R_duty(R);
               ws_server_send_text_all_from_callback(msg,len); // broadcast it!
             }
             break;
@@ -557,7 +557,7 @@ static void motorCurrentMeasurement_task(void* pvParameters) {
 
   void app_main() {
   wifi_setup();
-  led_setup();
+  pwm_setup();
   ws_server_start();
   xTaskCreate(&server_task,"server_task",3000,NULL,9,NULL);
   xTaskCreate(&server_handle_task,"server_handle_task",4000,NULL,6,NULL);
