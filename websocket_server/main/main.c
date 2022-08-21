@@ -175,13 +175,13 @@ static void led_setup() {
 
   led_blue.channel = LEDC_CHANNEL_0;
   led_blue.duty = 40;
-  led_blue.gpio_num = LED_PIN,
+  led_blue.gpio_num = 7,
   led_blue.speed_mode = LEDC_HIGH_SPEED_MODE;
   led_blue.timer_sel = LEDC_TIMER_0;
 
   led_yellow.channel = LEDC_CHANNEL_1;
   led_yellow.duty = 40;
-  led_yellow.gpio_num = 0,
+  led_yellow.gpio_num = 8,
   led_yellow.speed_mode = LEDC_HIGH_SPEED_MODE;
   led_yellow.timer_sel = LEDC_TIMER_0;
 
@@ -446,7 +446,7 @@ static void server_handle_task(void* pvParameters) {
 static void batteryVoltageMeasurement_task(void* pvParameters) {
   const int DELAY = 200 / portTICK_PERIOD_MS;
   static const adc_unit_t unit = ADC_UNIT_1;
-  static const adc_channel_t channel = ADC_CHANNEL_4;
+  static const adc_channel_t channel = ADC_CHANNEL_0;
   static const adc_atten_t atten = ADC_ATTEN_DB_6;
   static const adc_bits_width_t width = ADC_WIDTH_BIT_12;
 
@@ -493,8 +493,8 @@ static void batteryVoltageMeasurement_task(void* pvParameters) {
 static void motorCurrentMeasurement_task(void* pvParameters) {
   const int DELAY = 100 / portTICK_PERIOD_MS;
   static const adc_unit_t unit = ADC_UNIT_1;
-  static const adc_channel_t motor_L = ADC_CHANNEL_6;
-  static const adc_channel_t motor_R = ADC_CHANNEL_7;
+  static const adc_channel_t motor_L = ADC_CHANNEL_7;
+  static const adc_channel_t motor_R = ADC_CHANNEL_8;
   static const adc_atten_t atten = ADC_ATTEN_DB_11;
   static const adc_bits_width_t width = ADC_WIDTH_BIT_12;
 
