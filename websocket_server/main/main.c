@@ -56,6 +56,7 @@ const static int client_queue_size = 10;
 
 static ledc_channel_config_t motor_L;
 static ledc_channel_config_t motor_R;
+static ledc_channel_config_t LED;
 
 // handles WiFi events
 static esp_err_t event_handler(void* ctx, system_event_t* event) {
@@ -144,10 +145,9 @@ static void wifi_setup() {
   ESP_LOGI(TAG,"WiFi set up");
 }
 
-// sets up the led for pwm
 static void motor_L_duty(uint16_t duty) {
   static uint16_t val;
-  static uint16_t max = (1L<<10)-1;
+  static uint16_t max = (1L<<8)-1;
   if(duty > 100) return;
   val = (duty * max) / 100;
   ledc_set_duty(motor_L.speed_mode,motor_L.channel,val);
@@ -156,18 +156,27 @@ static void motor_L_duty(uint16_t duty) {
 
 static void motor_R_duty(uint16_t duty) {
   static uint16_t val;
-  static uint16_t max = (1L<<10)-1;
+  static uint16_t max = (1L<<8)-1;
   if(duty > 100) return;
   val = (duty * max) / 100;
   ledc_set_duty(motor_R.speed_mode,motor_R.channel,val);
   ledc_update_duty(motor_R.speed_mode,motor_R.channel);
 }
 
+static void LED_duty(uint16_t duty) {
+  static uint16_t val;
+  static uint16_t max = (1L<<8)-1;
+  if(duty > 100) return;
+  val = (duty * max) / 100;
+  ledc_set_duty(LED.speed_mode,LED.channel,val);
+  ledc_update_duty(LED.speed_mode,LED.channel);
+}
+
 static void pwm_setup() {
   const static char* TAG = "pwm_setup";
 
   ledc_timer_config_t ledc_timer = {
-    .duty_resolution = LEDC_TIMER_10_BIT,
+    .duty_resolution = LEDC_TIMER_8_BIT,
     .freq_hz         = 400,
     .speed_mode      = LEDC_HIGH_SPEED_MODE,
     .timer_num       = LEDC_TIMER_0
@@ -175,30 +184,39 @@ static void pwm_setup() {
 
   motor_L.channel = LEDC_CHANNEL_0;
   motor_L.duty = 40;
-  motor_L.gpio_num = 7,
+  motor_L.gpio_num = 12,
   motor_L.speed_mode = LEDC_HIGH_SPEED_MODE;
   motor_L.timer_sel = LEDC_TIMER_0;
 
   motor_R.channel = LEDC_CHANNEL_1;
   motor_R.duty = 40;
-  motor_R.gpio_num = 8,
+  motor_R.gpio_num = 13,
   motor_R.speed_mode = LEDC_HIGH_SPEED_MODE;
   motor_R.timer_sel = LEDC_TIMER_0;
+
+  LED.channel = LEDC_CHANNEL_2;
+  LED.duty = 0;
+  LED.gpio_num = 17,
+  LED.speed_mode = LEDC_HIGH_SPEED_MODE;
+  LED.timer_sel = LEDC_TIMER_0;
 
   ledc_timer_config(&ledc_timer);
   ledc_channel_config(&motor_L);
   ledc_channel_config(&motor_R);
+  ledc_channel_config(&LED);
+
   motor_L_duty(40);
   motor_R_duty(40);
+  LED_duty(0);
   ESP_LOGI(TAG,"led is off and ready, 10 bits");
 }
 
 // handles websocket events
 void websocket_callback(uint8_t num,WEBSOCKET_TYPE_t type,char* msg,uint64_t len) {
   const static char* TAG = "websocket_callback";
-  int value;
-  int L;
-  int R;
+  int L_duty_value;
+  int R_duty_value;
+  int LED_duty_value;
 
   switch(type) {
     case WEBSOCKET_CONNECT:
@@ -208,6 +226,7 @@ void websocket_callback(uint8_t num,WEBSOCKET_TYPE_t type,char* msg,uint64_t len
       ESP_LOGI(TAG,"client %i sent a disconnect message",num);
       motor_L_duty(40);
       motor_R_duty(40);
+      LED_duty(0);
       break;
     case WEBSOCKET_DISCONNECT_INTERNAL:
       ESP_LOGI(TAG,"client %i was disconnected",num);
@@ -216,28 +235,25 @@ void websocket_callback(uint8_t num,WEBSOCKET_TYPE_t type,char* msg,uint64_t len
       ESP_LOGI(TAG,"client %i was disconnected due to an error",num);
       motor_L_duty(40);
       motor_R_duty(40);
+      LED_duty(0);
       break;
     case WEBSOCKET_TEXT:
       if(len) { // if the message length was greater than zero
         switch(msg[0]) {
-          case 'L':
-            if(sscanf(msg,"L%i",&value)) {
-              ESP_LOGI(TAG,"LED value: %i",value);
-              motor_L_duty(value);
-              motor_R_duty(value);
-              ws_server_send_text_all_from_callback(msg,len); // broadcast it!
-            }
-            break;
-          case 'D':
-            if(sscanf(msg,"D%i:%i",&L,&R)) {
-              // ESP_LOGI(TAG,"LED value: %i : %i",L,R);
-              motor_L_duty(L);
-              motor_R_duty(R);
-              ws_server_send_text_all_from_callback(msg,len); // broadcast it!
-            }
-            break;
           case 'M':
-            ESP_LOGI(TAG, "got message length %i: %s", (int)len-1, &(msg[1]));
+            if(sscanf(msg,"M%i:%i",&L_duty_value,&R_duty_value)) {
+              // ESP_LOGI(TAG,"LED value: %i : %i",L,R);
+              motor_L_duty(L_duty_value);
+              motor_R_duty(R_duty_value);
+              ws_server_send_text_all_from_callback(msg,len); // broadcast it!
+            }
+            break;
+          case 'L':
+            if(sscanf(msg,"L%i",&LED_duty_value)) {
+              ESP_LOGI(TAG,"LED value: %i",LED_duty_value);
+              LED_duty(LED_duty_value);
+              ws_server_send_text_all_from_callback(msg,len); // broadcast it!
+            }
             break;
           default:
 	          ESP_LOGI(TAG, "got an unknown message with length %i", (int)len);
@@ -493,8 +509,8 @@ static void batteryVoltageMeasurement_task(void* pvParameters) {
 static void motorCurrentMeasurement_task(void* pvParameters) {
   const int DELAY = 100 / portTICK_PERIOD_MS;
   static const adc_unit_t unit = ADC_UNIT_1;
-  static const adc_channel_t motor_L = ADC_CHANNEL_7;
-  static const adc_channel_t motor_R = ADC_CHANNEL_8;
+  static const adc_channel_t motor_L = ADC_CHANNEL_3;
+  static const adc_channel_t motor_R = ADC_CHANNEL_5;
   static const adc_atten_t atten = ADC_ATTEN_DB_11;
   static const adc_bits_width_t width = ADC_WIDTH_BIT_12;
 

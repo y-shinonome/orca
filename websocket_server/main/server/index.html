@@ -17,16 +17,6 @@
       The below bar should change an LED brightness connected to the
       microcontroller. Try it when more than one device is connected!
     </p> -->
-      <!-- <div class="slidecontainer">
-        <input
-          type="range"
-          min="0"
-          max="100"
-          value="0"
-          class="slider"
-          id="myRange"
-        />
-      </div> -->
 
       <div class="meter-container speed-meter py-3 px-6">
         <p class="name">Speed</p>
@@ -58,6 +48,18 @@
         <div class="meter">
           <div id="right-motor-bar" class="bar"></div>
         </div>
+      </div>
+
+      <div class="slider-container py-3 px-6 my-3">
+        <p class="name my-3">LED</p>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value="0"
+          class="slider"
+          id="myRange"
+        />
       </div>
 
       <div id="joystick" class="joystick-container">

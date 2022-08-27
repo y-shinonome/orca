@@ -2,11 +2,12 @@ document.getElementById("state").innerText = "WebSocket is not connected";
 document.getElementById("state").style.color = "rgba(130, 147, 144, 1)";
 
 let websocket = new WebSocket("ws://" + location.hostname + "/");
-// let slider = document.getElementById("myRange");
 
-// slider.oninput = function () {
-//   websocket.send("L" + slider.value);
-// };
+let slider = document.getElementById("myRange");
+
+slider.oninput = function () {
+  websocket.send("L" + slider.value);
+};
 
 // function sendMsg() {
 //   websocket.send("L50");
@@ -36,7 +37,7 @@ websocket.onerror = function (evt) {
   document.getElementById("state").style.color = "rgba(255, 117, 94, 1)";
 };
 
-// websocket.onmessage = function (evt) {nerHTML
+// websocket.onmessage = function (evt) {
 //   let msg = evt.data;
 //   let value;
 //   switch (msg.charAt(0)) {
@@ -294,7 +295,7 @@ const neutralizeJoystick = () => {
   joystick().stick.draw();
   document.getElementById("speed").innerText = 0 + "%";
   document.getElementById("speed-bar").style.width = 0 + "%";
-  websocket.send("D40:40");
+  websocket.send("M40:40");
 };
 
 const startTilting = () => {
@@ -336,7 +337,7 @@ const tilt = () => {
       }
     };
 
-    websocket.send(`D${duty_L()}:${duty_R()}`);
+    websocket.send(`M${duty_L()}:${duty_R()}`);
   }
 };
 
